@@ -1,71 +1,37 @@
-import { app } from "/scripts/app.js";
 import { ComfyWidgets } from "/scripts/widgets.js";
+import { ComfyApp, app } from "/scripts/app.js";
+import { api } from '../../../scripts/api.js'
 
 app.registerExtension({
-  name: "Comfy.2labNode",
-  async beforeRegisterNodeDef(nodeType, nodeData, app) {
-    if (nodeData.name === "show_text (2lab)") {
-      // Node Created
-      const onNodeCreated = nodeType.prototype.onNodeCreated;
-      nodeType.prototype.onNodeCreated = function () {
-        const ret = onNodeCreated
-          ? onNodeCreated.apply(this, arguments)
-          : undefined;
+	name: "Comfy.2lab.nodes",
+	async beforeRegisterNodeDef(nodeType, nodeData, app) {
+        console.log('beforeRegisterNodeDef()')
 
-        let ShowText = app.graph._nodes.filter(
-            (wi) => wi.type == nodeData.name
-          ),
-          nodeName = `${nodeData.name}_${ShowText.length}`;
+        // Adds an upload button to the nodes
+		if (nodeData?.input?.required?.image?.[1]?.image_upload === true) {
+			nodeData.input.required.upload = ["IMAGEUPLOAD"];
+		}
 
-//        console.log(`Create ${nodeData.name}: ${nodeName}`);
+		//print workflow output
+        const onExecuted = nodeType.prototype.onExecuted
+		nodeType.prototype.onExecuted = function (message) {
+            onExecuted?.apply(this, arguments)
 
-        const wi = ComfyWidgets.STRING(
-          this,
-          nodeName,
-          [
-            "STRING",
-            {
-              default: "",
-              multiline: true,
-            },
-          ],
-          app
-        );
-        wi.widget.inputEl.readOnly = true;
-        return ret;
-      };
-      // Function set value
-      const outSet = function (texts) {
-        if (texts.length > 0) {
-          let widget_id = this?.widgets.findIndex(
-            (w) => w.type == "customtext"
-          );
-
-          if (Array.isArray(texts))
-            texts = texts
-              .filter((word) => word.trim() !== "")
-              .map((word) => word.trim())
-              .join(" ");
-
-          this.widgets[widget_id].value = texts;
-          app.graph.setDirtyCanvas(true);
         }
-      };
-
-      // onExecuted
-      const onExecuted = nodeType.prototype.onExecuted;
-      nodeType.prototype.onExecuted = function (texts) {
-        onExecuted?.apply(this, arguments);
-        outSet.call(this, texts?.string);
-      };
-      // onConfigure
-      const onConfigure = nodeType.prototype.onConfigure;
-      nodeType.prototype.onConfigure = function (w) {
-        onConfigure?.apply(this, arguments);
-        if (w?.widgets_values?.length) {
-          outSet.call(this, w.widgets_values);
-        }
-      };
-    }
-  },
+	},
 });
+
+api.addEventListener('execution_start', async ({ detail }) => {
+  console.log('#execution_start 2lab', detail)
+  //TODO 增加提交到服务器的功能
+    try{
+        let data = await app.graphToPrompt()
+        console.log('api json = ')
+//        console.log(data)
+        console.log(data.output)
+//        const json = JSON.stringify(data.output, null, 2); // convert the data to a JSON string
+//        console.log(json)
+    } catch (error) {
+        console.log('###error', error)
+    }
+})

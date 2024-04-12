@@ -6,12 +6,13 @@ import __main__
 
 from .nodes.constants import PROJECT_NAME
 from .nodes.properties_loader import LoadProperties
-from .nodes.direct.baidu_translator import DirectBaiduTranslator
-from .nodes.direct.youdao_ai import DirectYoudaoTranslator
-from .nodes.direct.openai_gpt import OpenaiGPT
-from .nodes.direct.azure_gpt import DirectAzureOpenaiGpt
-from .nodes.direct.chatglm_gpt import DirectChatGLMGpt
-from .nodes.api.llm import BaiduTranslator, YoudaoTranslator, AzureOpenaiGPT, ChatGlmGPT
+from .nodes.api.baidu_translator import BaiduTranslator
+from .nodes.api.youdao_ai import YoudaoTranslator
+from .nodes.api.openai_gpt import OpenaiGPT
+from .nodes.api.azure_gpt import AzureOpenaiGpt
+from .nodes.api.chatglm_gpt import ChatGLMGpt
+from .nodes.api.llm import FactxApiBaiduTranslator, FactxApiYoudaoTranslator, FactxApiAzureOpenaiGPT, FactxApiChatGlmGPT
+from .nodes.workflow2Api.apiNodes import LoadImage, Seed, InputInt, InputFloat, InputText, PublishWorkflow, AvailableCheckpointLoader,AvailableVAELoader,OutputText,OutputImage,OutputVideo
 
 python = sys.executable
 
@@ -41,31 +42,53 @@ if result.left_only or result.diff_files:
 NODE_CLASS_MAPPINGS = {
     LoadProperties.NAME: LoadProperties,
     OpenaiGPT.NAME: OpenaiGPT,
-    DirectAzureOpenaiGpt.NAME: DirectAzureOpenaiGpt,
-    DirectChatGLMGpt.NAME: DirectChatGLMGpt,
-    DirectBaiduTranslator.NAME: DirectBaiduTranslator,
-    DirectYoudaoTranslator.NAME: DirectYoudaoTranslator,
-
+    AzureOpenaiGpt.NAME: AzureOpenaiGpt,
+    ChatGLMGpt.NAME: ChatGLMGpt,
     BaiduTranslator.NAME: BaiduTranslator,
     YoudaoTranslator.NAME: YoudaoTranslator,
-    AzureOpenaiGPT.NAME: AzureOpenaiGPT,
-    ChatGlmGPT.NAME: ChatGlmGPT,
+    FactxApiBaiduTranslator.NAME: FactxApiBaiduTranslator,
+    FactxApiYoudaoTranslator.NAME: FactxApiYoudaoTranslator,
+    FactxApiAzureOpenaiGPT.NAME: FactxApiAzureOpenaiGPT,
+    FactxApiChatGlmGPT.NAME: FactxApiChatGlmGPT,
+
+    AvailableCheckpointLoader.NAME: AvailableCheckpointLoader,
+    AvailableVAELoader.NAME: AvailableVAELoader,
+    LoadImage.NAME: LoadImage,
+    Seed.NAME: Seed,
+    InputInt.NAME:  InputInt,
+    InputFloat.NAME: InputFloat,
+    InputText.NAME: InputText,
+    OutputText.NAME: OutputText,
+    OutputImage.NAME: OutputImage,
+    OutputVideo.NAME: OutputVideo,
+    PublishWorkflow.NAME: PublishWorkflow,
 }
 
 # display name
 NODE_DISPLAY_NAME_MAPPINGS = {
     LoadProperties.NAME: "read properties 读取本地参数",
     OpenaiGPT.NAME: "OpenAI chatGPT",
+    AzureOpenaiGpt.NAME: "Azure OpenAI GPT",
+    ChatGLMGpt.NAME: "ChatGLM chatGPT 智谱AI",
+    BaiduTranslator.NAME: "Baidu translator 百度翻译",
+    YoudaoTranslator.NAME: "Youdao translator 有道翻译",
+    FactxApiBaiduTranslator.NAME: "Baidu translator 百度翻译 (Factx API)",
+    FactxApiYoudaoTranslator.NAME: "Youdao translator 有道翻译 (Factx API)",
+    FactxApiAzureOpenaiGPT.NAME: "Azure OpenAI GPT (Factx API)",
+    FactxApiChatGlmGPT.NAME: "ChatGLM chatGPT 智谱AI (Factx API)",
 
-    DirectAzureOpenaiGpt.NAME: "Azure OpenAI GPT",
-    DirectChatGLMGpt.NAME: "ChatGLM chatGPT 智谱AI",
-    DirectBaiduTranslator.NAME: "Baidu translator 百度翻译",
-    DirectYoudaoTranslator.NAME: "Youdao translator 有道翻译",
+    AvailableCheckpointLoader.NAME: "load available checkpoint 载入可用的模型",
+    AvailableVAELoader.NAME: "load available vae 载入可用的VAE",
+    LoadImage.NAME: "load image 读入图片",
+    Seed.NAME: "seed 生成随机数",
+    InputInt.NAME: "input int 输入整数",
+    InputFloat.NAME: "input float 输入浮点数",
+    InputText.NAME: "input Text 输入文本",
+    OutputText.NAME: "mark text output nodes 标注文字输出节点",
+    OutputImage.NAME: "mark image output nodes 标注图片输出节点",
+    OutputVideo.NAME: "mark video output nodes 标注视频输出节点",
+    PublishWorkflow.NAME: "publish to 2lab 发布到2lab服务器",
 
-    BaiduTranslator.NAME: "Baidu translator 百度翻译 (Factx API)",
-    YoudaoTranslator.NAME: "Youdao translator 有道翻译 (Factx API)",
-    AzureOpenaiGPT.NAME: "Azure OpenAI GPT (Factx API)",
-    ChatGlmGPT.NAME: "ChatGLM chatGPT 智谱AI (Factx API)",
 }
 
 __all__ = [NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS]

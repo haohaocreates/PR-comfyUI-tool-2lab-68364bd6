@@ -1,10 +1,10 @@
 import json
 import requests
-from ..constants import get_project_name,get_project_category
+from ..constants import get_project_name,get_project_category,project_root
 
 api_server_url = "http://api.factx.cn/api/v4";
 
-NODE_CATEGORY = get_project_category("factxApi/llm")
+NODE_CATEGORY = get_project_category("api")
 
 class FactxResponse:
     def __init__(self, success: bool, message: str, data=None):
@@ -27,7 +27,7 @@ def submit(command: str, data: str) -> FactxResponse:
     print(factxResponse)
     return factxResponse
 
-class ChatGlmGPT:
+class FactxApiChatGlmGPT:
     NAME = get_project_name('FactxChatGlmGPT')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
@@ -58,7 +58,7 @@ class ChatGlmGPT:
         else:
             return {"result": (responseJson['message'],)}
 
-class AzureOpenaiGPT:
+class FactxApiAzureOpenaiGPT:
     NAME = get_project_name('FactxAzureOpenaiGPT')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
@@ -91,7 +91,7 @@ class AzureOpenaiGPT:
         else:
             return {"result": (responseJson['message'],)}
 
-class BaiduTranslator:
+class FactxApiBaiduTranslator:
     NAME = get_project_name('factx_api_baidu_translator')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
@@ -124,7 +124,7 @@ class BaiduTranslator:
         else:
             return {"result": (responseJson['message'],)}
 
-class YoudaoTranslator:
+class FactxApiYoudaoTranslator:
     NAME = get_project_name('factx_api_youdao_translator')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)

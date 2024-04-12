@@ -1,5 +1,3 @@
-# fork from https://github.com/Derfuu/Derfuu_ComfyUI_ModdedNodes/, thx!
-
 import sys
 
 FLOAT = ("FLOAT", {"default": 1,

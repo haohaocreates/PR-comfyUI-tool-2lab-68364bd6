@@ -8,7 +8,8 @@
   "azure_openai_endpoint": "",
   "azure_openai_deployment": "",
   "azure_openai_api_version": "2023-05-15",
-  "chatGlm_gpt_api_key": ""
+  "chatGlm_gpt_api_key": "",
+  "2lab_key": ""
 }
 
 
