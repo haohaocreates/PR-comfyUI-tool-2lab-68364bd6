@@ -29,160 +29,6 @@ class AnyType(str):
 any = AnyType("*")
 
 
-class DisplayAny:
-  """Display any data node."""
-
-  NAME = get_project_name('DisplayAny')
-  CATEGORY = NODE_CATEGORY
-
-  @classmethod
-  def INPUT_TYPES(cls):  # pylint: disable = invalid-name, missing-function-docstring
-    return {
-      "required": {
-        "source": (any, {}),
-      },
-    }
-
-  RETURN_TYPES = ()
-  FUNCTION = "main"
-  OUTPUT_NODE = True
-
-  def main(self, source=None):
-    value = 'None'
-    if source is not None:
-      try:
-        value = json.dumps(source)
-      except Exception:
-        try:
-          value = str(source)
-        except Exception:
-          value = 'source exists, but could not be serialized.'
-
-    return {"ui": {"text": (value,)}}
-class ShowText1:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "text": ("STRING", {"forceInput": True}),
-            },
-            "hidden": {
-                "unique_id": "UNIQUE_ID",
-                "extra_pnginfo": "EXTRA_PNGINFO",},
-        }
-
-    INPUT_IS_LIST = True
-    NAME = get_project_name('show_text1')
-    CATEGORY = NODE_CATEGORY
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("string1",)
-    OUTPUT_IS_LIST = (True,)
-    OUTPUT_NODE = True
-    FUNCTION = "doWork"
-
-    def doWork(self, text, unique_id=None, extra_pnginfo=None):
-        if unique_id is not None and extra_pnginfo is not None:
-            if not isinstance(extra_pnginfo, list):
-                print("Error: extra_pnginfo is not a list")
-            elif (
-                not isinstance(extra_pnginfo[0], dict)
-                or "workflow" not in extra_pnginfo[0]
-            ):
-                print("Error: extra_pnginfo[0] is not a dict or missing 'workflow' key")
-            else:
-                workflow = extra_pnginfo[0]["workflow"]
-                node = next(
-                    (x for x in workflow["nodes"] if str(x["id"]) == str(unique_id[0])),
-                    None,
-                )
-                if node:
-                    node["widgets_values"] = [text]
-        return {"ui": {"url": [text, ]}, "result": (text,)}
-
-class ShowText2:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "text": ("STRING", {"forceInput": True}),
-            },
-            "hidden": {
-                "unique_id": "UNIQUE_ID",
-                "extra_pnginfo": "EXTRA_PNGINFO",
-            },
-        }
-
-    INPUT_IS_LIST = True
-    RETURN_TYPES = ("STRING",)
-    FUNCTION = "notify"
-    OUTPUT_NODE = True
-    OUTPUT_IS_LIST = (True,)
-
-    NAME = get_project_name('show_text2')
-    CATEGORY = NODE_CATEGORY
-
-    def notify(self, text, unique_id=None, extra_pnginfo=None):
-        if unique_id is not None and extra_pnginfo is not None:
-            if not isinstance(extra_pnginfo, list):
-                print("Error: extra_pnginfo is not a list")
-            elif (
-                not isinstance(extra_pnginfo[0], dict)
-                or "workflow" not in extra_pnginfo[0]
-            ):
-                print("Error: extra_pnginfo[0] is not a dict or missing 'workflow' key")
-            else:
-                workflow = extra_pnginfo[0]["workflow"]
-                node = next(
-                    (x for x in workflow["nodes"] if str(x["id"]) == str(unique_id[0])),
-                    None,
-                )
-                if node:
-                    node["widgets_values"] = [text]
-
-        return {"ui": {"text": text}, "result": (text,)}
-
-class ShowText:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "text": ("STRING", {"forceInput": True}),
-            },
-            "hidden": {
-                "unique_id": "UNIQUE_ID",
-                "extra_pnginfo": "EXTRA_PNGINFO",
-            },
-        }
-
-    INPUT_IS_LIST = True
-    RETURN_TYPES = ("STRING",)
-    FUNCTION = "notify"
-    OUTPUT_NODE = True
-    OUTPUT_IS_LIST = (True,)
-
-    NAME = get_project_name('show_text')
-    CATEGORY = NODE_CATEGORY
-
-    def notify(self, text, unique_id=None, extra_pnginfo=None):
-        if unique_id is not None and extra_pnginfo is not None:
-            if not isinstance(extra_pnginfo, list):
-                print("Error: extra_pnginfo is not a list")
-            elif (
-                not isinstance(extra_pnginfo[0], dict)
-                or "workflow" not in extra_pnginfo[0]
-            ):
-                print("Error: extra_pnginfo[0] is not a dict or missing 'workflow' key")
-            else:
-                workflow = extra_pnginfo[0]["workflow"]
-                node = next(
-                    (x for x in workflow["nodes"] if str(x["id"]) == str(unique_id[0])),
-                    None,
-                )
-                if node:
-                    node["widgets_values"] = [text]
-
-        return {"ui": {"text": text}, "result": (text,)}
-
 class LoadImage:
     @classmethod
     def INPUT_TYPES(s):
@@ -397,18 +243,8 @@ class OutputVideo:
 
 
 class PublishWorkflow:
-    userKey = 'initKey'
     def __init__(s):
         pass
-        # print(f'PublishWorkflow __init__')
-        # try:
-        #     config_path = os.path.join(project_root, 'properties.json')
-        #     with open(config_path, 'r') as f:
-        #         key_dict = json.load(f)
-        #         s.userKey = key_dict.get('2lab_key')
-        #         print(f'2lab_key = {s.userKey}')
-        # except:
-        #     raise Exception('在properties.json中没有找到2lab_key')
     @classmethod
     def INPUT_TYPES(c):
         return {
@@ -431,11 +267,11 @@ class PublishWorkflow:
     OUTPUT_NODE = True
 
     def doWork(self, userKey, id, name, desc, publish, trigger=None):
-        print(f"trigger = {trigger}")
-        print(f"userKey = {userKey}")
+        # print(f"trigger = {trigger}")
+        # print(f"userKey = {userKey}")
         text = ''
         if userKey is None or userKey == '':
-            text = '找不到userKey。请在配置文件properties.json中输入2lab_key。如果没有2lab_key，请到http://www.2lab.cn/pb/applyKey申请。'
+            text = '找不到userKey。请在配置文件properties.json中输入2lab_key。如果没有2lab_key，请到http://www.2lab.cn/pb/qiyeweixin 申请。'
         elif publish:
             text = '项目发布成功。请到弹出窗口中查看绘图界面（后台处理需要几分钟，请稍等）'
         else:
