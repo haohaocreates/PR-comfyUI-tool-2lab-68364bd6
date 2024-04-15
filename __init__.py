@@ -12,8 +12,7 @@ from .nodes.api.openai_gpt import OpenaiGPT
 from .nodes.api.azure_gpt import AzureOpenaiGpt
 from .nodes.api.chatglm_gpt import ChatGLMGpt
 from .nodes.api.llm import FactxApiBaiduTranslator, FactxApiYoudaoTranslator, FactxApiAzureOpenaiGPT, FactxApiChatGlmGPT
-from .nodes.workflow2Api.apiNodes import LoadImage, Seed, InputInt, InputFloat, InputText, PublishWorkflow, AvailableCheckpointLoader,AvailableVAELoader,OutputText,OutputImage,OutputVideo
-
+from .nodes.workflow2Api.apiNodes import LoadImage, Seed, InputInt, InputFloat, InputText, PublishWorkflow, AvailableCheckpointLoader,AvailableVAELoader,OutputText,OutputImage,OutputVideo,DisplayAny,ShowText2,ShowText1,ShowText
 python = sys.executable
 
 # User extension files in custom_nodes
@@ -62,6 +61,11 @@ NODE_CLASS_MAPPINGS = {
     OutputImage.NAME: OutputImage,
     OutputVideo.NAME: OutputVideo,
     PublishWorkflow.NAME: PublishWorkflow,
+
+    DisplayAny.NAME: DisplayAny,
+    ShowText2.NAME: ShowText2,
+    ShowText1.NAME: ShowText1,
+    ShowText.NAME: ShowText,
 }
 
 # display name
@@ -88,6 +92,11 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     OutputImage.NAME: "mark image output nodes 标注图片输出节点",
     OutputVideo.NAME: "mark video output nodes 标注视频输出节点",
     PublishWorkflow.NAME: "publish to 2lab 发布到2lab服务器",
+
+    DisplayAny.NAME: "DisplayAny",
+    ShowText.NAME: "ShowText",
+    ShowText2.NAME: "ShowText2",
+    ShowText1.NAME: "ShowText1",
 
 }
 
