@@ -1,6 +1,7 @@
+import hashlib
 import json
 import requests
-from ..constants import get_project_name,get_project_category,project_root
+from ..constants import get_project_name, get_project_category, project_root, read_user_key
 
 api_server_url = "http://api.factx.cn/api/v4";
 
@@ -27,8 +28,8 @@ def submit(command: str, data: str) -> FactxResponse:
     print(factxResponse)
     return factxResponse
 
-class FactxApiChatGlmGPT:
-    NAME = get_project_name('FactxChatGlmGPT')
+class ChatGLM:
+    NAME = get_project_name('ChatGLM')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
@@ -38,28 +39,37 @@ class FactxApiChatGlmGPT:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "api_id": ("KEY", {"forceInput": True}),
-                "api_key": ("KEY", {"forceInput": True}),
                 "prompt": ("STRING", {"multiline": True}),
             },
         }
 
-    def doWork(self, api_id, api_key, prompt):
+    def doWork(self,  prompt):
         command = "app_factxApi_ChatGLM_GPT"
+        userKey = read_user_key()
+        if userKey == "":
+            raise Exception("还没设置userKey")
         paramMap = {
-            "api_id": api_id,
-            "api_key": api_key,
+            'userKey': userKey,
             "prompt": prompt,
         }
         responseJson = submit(command, json.dumps(paramMap))
         if responseJson['success']==True:
-            translate_result = responseJson['data']['result']
-            return {"result": (translate_result,)}
+            result = responseJson['data']['result']
+            result = result.strip()
+            if result.startswith('"') and result.endswith('"'):
+                result =  result[1:-1].strip()
+            return {"result": (result,)}
         else:
             return {"result": (responseJson['message'],)}
 
-class FactxApiAzureOpenaiGPT:
-    NAME = get_project_name('FactxAzureOpenaiGPT')
+    @classmethod
+    def IS_CHANGED(s, prompt):
+        m = hashlib.sha256()
+        m.update(prompt)
+        return m.digest().hex()
+
+class AzureOpenaiGPT:
+    NAME = get_project_name('AzureOpenaiGPT')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
@@ -69,18 +79,18 @@ class FactxApiAzureOpenaiGPT:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "api_id": ("KEY", {"forceInput": True}),
-                "api_key": ("KEY", {"forceInput": True}),
                 "prompt": ("STRING", {"multiline": True}),
                 "deployment": ("KEY", {"multiline": False, "default": ""}),
             },
         }
 
-    def doWork(self, api_id, api_key, prompt, deployment):
+    def doWork(self,  prompt, deployment):
         command = "app_factxApi_Azure_GPT"
+        userKey = read_user_key()
+        if userKey == "":
+            raise Exception("还没设置userKey")
         paramMap = {
-            "api_id": api_id,
-            "api_key": api_key,
+            'userKey': userKey,
             "prompt": prompt,
             "deployment": deployment
         }
@@ -91,8 +101,14 @@ class FactxApiAzureOpenaiGPT:
         else:
             return {"result": (responseJson['message'],)}
 
-class FactxApiBaiduTranslator:
-    NAME = get_project_name('factx_api_baidu_translator')
+    @classmethod
+    def IS_CHANGED(s, prompt,deployment):
+        m = hashlib.sha256()
+        m.update(prompt+deployment)
+        return m.digest().hex()
+
+class BaiduTranslator:
+    NAME = get_project_name('BaiduTranslator')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
@@ -102,18 +118,18 @@ class FactxApiBaiduTranslator:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "api_id": ("KEY", {"forceInput": True}),
-                "api_key": ("KEY", {"forceInput": True}),
                 "text": ("STRING", {"multiline": True}),
                 "to_lang": (["en", "zh"], {"default": "en"}),
             },
         }
 
-    def doWork(self, api_id, api_key, to_lang, text):
+    def doWork(self,  to_lang, text):
         command = "app_factxApi_baidu_translator"
+        userKey = read_user_key()
+        if userKey == "":
+            raise Exception("还没设置userKey")
         paramMap = {
-            "api_id": api_id,
-            "api_key": api_key,
+            'userKey': userKey,
             "to_lang": to_lang,
             "text": text
         }
@@ -124,8 +140,14 @@ class FactxApiBaiduTranslator:
         else:
             return {"result": (responseJson['message'],)}
 
-class FactxApiYoudaoTranslator:
-    NAME = get_project_name('factx_api_youdao_translator')
+    @classmethod
+    def IS_CHANGED(s, to_lang, text):
+        m = hashlib.sha256()
+        m.update(to_lang+text)
+        return m.digest().hex()
+
+class YoudaoTranslator:
+    NAME = get_project_name('YoudaoTranslator')
     CATEGORY = NODE_CATEGORY
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("text",)
@@ -135,18 +157,18 @@ class FactxApiYoudaoTranslator:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "app_key": ("KEY", {"forceInput": True}),
-                "app_secret": ("KEY", {"forceInput": True}),
                 "text": ("STRING", {"multiline": True}),
                 "to_lang": (["en", "zh-CHS"], {"default": "en"}),
             },
         }
 
-    def doWork(self, app_key,app_secret, to_lang, text):
+    def doWork(self,  to_lang, text):
         command = "app_factxApi_youdao_translator"
+        userKey = read_user_key()
+        if userKey == "":
+            raise Exception("还没设置userKey")
         paramMap = {
-            "app_key": app_key,
-            "app_secret": app_secret,
+            'userKey': userKey,
             "to_lang": to_lang,
             "text": text
         }
@@ -156,3 +178,9 @@ class FactxApiYoudaoTranslator:
             return {"result": (translate_result,)}
         else:
             return {"result": (responseJson['message'],)}
+
+    @classmethod
+    def IS_CHANGED(s, to_lang, text):
+        m = hashlib.sha256()
+        m.update(to_lang+text)
+        return m.digest().hex()

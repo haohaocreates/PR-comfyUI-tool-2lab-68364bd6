@@ -1,7 +1,6 @@
 import json
 import os
 from PIL import Image, ImageOps, ImageSequence
-from PIL.PngImagePlugin import PngInfo
 import numpy as np
 import folder_paths
 import torch
@@ -9,27 +8,19 @@ import hashlib
 from ..common.fields import BOOL_TRUE, BOOL_FALSE
 import comfy.sd
 import comfy.utils
-from ..constants import get_project_name, get_project_category, project_root
+from ..constants import get_project_name, get_project_category, project_root, userKey_file
+from PIL.PngImagePlugin import PngInfo
+from comfy.cli_args import args
 
 NODE_CATEGORY = get_project_category("workflow2Api")
 
-config_path = os.path.join(project_root, 'properties.json')
-with open(config_path, 'r') as f:
-    key_dict = json.load(f)
-    workerKey = key_dict.get('2lab_key')
-    print(f'2lab_key = {workerKey}')
-
 class AnyType(str):
-  """A special class that is always equal in not equal comparisons. Credit to pythongosssss"""
-
   def __ne__(self, __value: object) -> bool:
     return False
 
-
 any = AnyType("*")
 
-
-class LoadImage:
+class InputImage:
     @classmethod
     def INPUT_TYPES(s):
         input_dir = folder_paths.get_input_directory()
@@ -41,7 +32,7 @@ class LoadImage:
                      },
                 }
 
-    NAME = get_project_name('LoadImage')
+    NAME = get_project_name('InputImage')
     CATEGORY = NODE_CATEGORY
 
     RETURN_TYPES = ("IMAGE", "MASK")
@@ -91,8 +82,7 @@ class LoadImage:
 
         return True
 
-
-class Seed:
+class InputSeed:
     def __init__(self):
         pass
 
@@ -104,7 +94,7 @@ class Seed:
         },
         }
 
-    NAME = get_project_name('Seed')
+    NAME = get_project_name('InputSeed')
     CATEGORY = NODE_CATEGORY
 
     RETURN_TYPES = ("INT",)
@@ -115,7 +105,6 @@ class Seed:
     @staticmethod
     def doWork(seed, export):
         return seed,
-
 
 class InputInt:
     def __init__(self):
@@ -140,7 +129,6 @@ class InputInt:
     def doWork(int, desc, export):
         return int, float(int), str(int)
 
-
 class InputFloat:
     def __init__(self):
         pass
@@ -164,7 +152,6 @@ class InputFloat:
     def doWork(float, desc, export):
         return float, int(float), str(float)
 
-
 class InputText:
 
     @classmethod
@@ -187,60 +174,127 @@ class InputText:
     def doWork(text, type, desc, export):
         return text,
 
-
 class OutputText:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {
-            "outputTexts": ("STRING", {"default": "", "multiline": False, "forceInput": True}),
-        },
+        return {
+            "required": {
+                "text": ("STRING", {"forceInput": True}),
+            },
+            "hidden": {
+                "unique_id": "UNIQUE_ID",
+                "extra_pnginfo": "EXTRA_PNGINFO",
+            },
         }
 
+    INPUT_IS_LIST = True
     NAME = get_project_name('OutputText')
     CATEGORY = NODE_CATEGORY
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("outputTexts",)
     FUNCTION = "doWork"
+    RETURN_TYPES = ("STRING",)
+    OUTPUT_IS_LIST = (True,)
+    OUTPUT_NODE = True
 
-    def doWork(self, outputStrings=None, ):
-        return outputStrings,
+    def doWork(self, text, unique_id=None, extra_pnginfo=None):
+        if unique_id is not None and extra_pnginfo is not None:
+            if not isinstance(extra_pnginfo, list):
+                print("Error: extra_pnginfo is not a list")
+            elif (
+                not isinstance(extra_pnginfo[0], dict)
+                or "workflow" not in extra_pnginfo[0]
+            ):
+                print("Error: extra_pnginfo[0] is not a dict or missing 'workflow' key")
+            else:
+                workflow = extra_pnginfo[0]["workflow"]
+                node = next(
+                    (x for x in workflow["nodes"] if str(x["id"]) == str(unique_id[0])),
+                    None,
+                )
+                if node:
+                    node["widgets_values"] = [text]
 
+        return {"ui": {"text": text}, "result": (text,)}
 
 class OutputImage:
+    def __init__(self):
+        self.output_dir = folder_paths.get_output_directory()
+        self.type = "output"
+        self.prefix_append = ""
+        self.compress_level = 4
+
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {
-            "outputImages": ("IMAGE",),
-        },
-        }
+        return {"required":
+                    {"images": ("IMAGE", ),
+                     "filename_prefix": ("STRING", {"default": "2lab/img"})},
+                     "metadata": (["disable","enable"],),
+                "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO"},
+                }
 
     NAME = get_project_name('OutputImage')
     CATEGORY = NODE_CATEGORY
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("outputImages",)
+    RETURN_TYPES = ()
     FUNCTION = "doWork"
+    OUTPUT_NODE = True
 
-    def doWork(self, outputImages=None):
-        return outputImages,
+    def doWork(self, images, filename_prefix="2lab/img",metadata="disable", prompt=None, extra_pnginfo=None):
+        filename_prefix += self.prefix_append
+        print("filename_prefix = ",filename_prefix)
+        full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(filename_prefix, self.output_dir, images[0].shape[1], images[0].shape[0])
+        print("full_output_folder = ",full_output_folder)
+        print("filename = ",filename)
+        print("counter = ",counter)
+        print("subfolder = ",subfolder)
+        print("filename_prefix = ",filename_prefix)
+        results = list()
+        for (batch_number, image) in enumerate(images):
+            i = 255. * image.cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            metadata = None
+            if (not args.disable_metadata) and (metadata=="enable"):
+                metadata = PngInfo()
+                if prompt is not None:
+                    metadata.add_text("prompt", json.dumps(prompt))
+                if extra_pnginfo is not None:
+                    for x in extra_pnginfo:
+                        metadata.add_text(x, json.dumps(extra_pnginfo[x]))
 
+            filename_with_batch_num = filename.replace("%batch_num%", str(batch_number))
+            file = f"{filename_with_batch_num}_{counter:05}_.png"
+            img.save(os.path.join(full_output_folder, file), pnginfo=metadata, compress_level=self.compress_level)
+            results.append({
+                "filename": file,
+                "subfolder": subfolder,
+                "type": self.type
+            })
+            counter += 1
 
-class OutputVideo:
+        return { "ui": { "images": results }, }
+
+class InputUserKey:
+
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
-            "outputVideos": ("VIDEO",),
-        },
+                "userKey": ("STRING", {"default": '', "multiline": False}),
+            },
         }
 
-    NAME = get_project_name('OutputVideo')
+    NAME = get_project_name('InputUserKey')
     CATEGORY = NODE_CATEGORY
-    RETURN_TYPES = ("VIDEO",)
-    RETURN_NAMES = ("outputVideos",)
+    RETURN_TYPES = ()
     FUNCTION = "doWork"
+    OUTPUT_NODE = True
 
-    def doWork(self, outputVideos=None):
-        return outputVideos,
-
+    def doWork(self, userKey):
+        if userKey is None or userKey == '':
+            raise ValueError('please input user key')
+        else:
+            # 如果覆盖userKey不为空，覆盖userKey
+            with open(userKey_file, 'w', encoding='utf-8') as file:
+                # 写入文本
+                file.write(userKey)
+        return { "ui": { "userKey": userKey }, }
 
 class PublishWorkflow:
     def __init__(s):
@@ -250,60 +304,46 @@ class PublishWorkflow:
         return {
             "required": {
                 "trigger": (any, {}),
-                "userKey": ("STRING", {"default": workerKey, "multiline": False}),
-                "id": ("STRING", {"default": "txt2img", "multiline": False}),
+                "id": ("STRING", {"default": "workflowId", "multiline": False}),
                 "name": ("STRING", {"default": "文生图", "multiline": False}),
                 "desc": ("STRING", {"default": "", "multiline": False}),
                 "publish": BOOL_FALSE,
             },
-
         }
 
     NAME = get_project_name('PublishWorkflow')
     CATEGORY = NODE_CATEGORY
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("text",)
+    RETURN_TYPES = ("BOOL","STRING",)
+    RETURN_NAMES = ("publish","id",)
     FUNCTION = "doWork"
     OUTPUT_NODE = True
 
-    def doWork(self, userKey, id, name, desc, publish, trigger=None):
-        # print(f"trigger = {trigger}")
-        # print(f"userKey = {userKey}")
+    def doWork(self, id, name, desc, publish, trigger=None):
         text = ''
-        if userKey is None or userKey == '':
-            text = '找不到userKey。请在配置文件properties.json中输入2lab_key。如果没有2lab_key，请到http://www.2lab.cn/pb/qiyeweixin 申请。'
-        elif publish:
-            text = '项目发布成功。请到弹出窗口中查看绘图界面（后台处理需要几分钟，请稍等）'
+        if publish:
+            text = f'项目正在发布中，请到弹出窗口中查看绘图界面。如果没有弹出窗口，请检查是否被浏览器拦截。弹出窗口如果显示工作流不存在，是因为后台处理需要几分钟，请耐心等待。如果遇到其他问题，请请到http://www.2lab.cn/pb/contactus 咨询技术支持。'
         else:
-            text = '项目未发布。如果需要发布项目到网页，请把publish设为True'
+            text = '项目未发布。如果要发布本工作流到网页，请把参数publish设为True'
 
-        return {"ui": {"text": [text, ]}, "result": (text,)}
-
+        return {"ui": {"text": [text, ]}, "result": (publish, id,)}
 
 class AvailableCheckpointLoader:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": {"ckpt_name": (["sd15/dreamshaper_8.safetensors",
-                                            "sd15/2d/counterfeitV30_v30.safetensors",
-                                            "sd15/2d/revAnimated_v2Rebirth.safetensors",
-                                            "sd15/3d/hellonijicute25d_V13g.safetensors",
-                                            "sd15/real/epicphotogasm_ultimateFidelity.safetensors",
-                                            "sd15/real/leosamsFilmgirlUltra_ultraBaseModel.safetensors",
-                                            "sd15/real/majicmixRealistic_v7.safetensors",
-                                            "sd15/real/majicmixSombre_v20.safetensors",
-                                            "sd15/real/realisticVisionV60B1_v60B1VAE",
-                                            "sdxl/dreamshaperXL_lightningDPMSDE.safetensors",
-                                            "sdxl/dreamshaperXL_v21TurboDPMSDE.safetensors.safetensors",
-                                            "sdxl/juggernautXL_v9Rdphoto2Lightning",
-                                            "sdxl/juggernautXL_v9Rundiffusionphoto2.safetensors",
-                                            "sdxl/2d/animagineXLV31_v31.safetensors",
-                                            "sdxl/2d/counterfeitxl_v25.safetensors",
-                                            "sdxl/2d/元气动漫_2D_2.5D_V1.0.safetensors",
-                                            "sdxl/3d/dynavisionXLAllInOneStylized_releaseV0610Bakedvae.safetensors",
-                                            "sdxl/3d/MR 3DQ _SDXL V0.2.safetensors",
-                                            "sdxl/3d/samaritan3dCartoon_v40SDXL.safetensors",
-                                            "sdxl/3d/starlightXLAnimated_v3.safetensors",
-                                            "sdxl/real/leosamsHelloworldXL_hw50EulerALightning.safetensors"],),
+        return {"required": {"ckpt_name": (["sd15/2d/counterfeitV30_v30",
+                                            "sd15/3d/hellonijicute25d_V13g",
+                                            "sd15/dreamshaper_8",
+                                            "sd15/real/majicmixRealistic_v7",
+                                            "sd15/real/majicmixSombre_v20",
+                                            "sdxl/2d/animagineXLV31_v31",
+                                            "sdxl/2d/counterfeitxl_v25",
+                                            "sdxl/3d/dynavisionXLAllInOneStylized_releaseV0610Bakedvae",
+                                            "sdxl/3d/samaritan3dCartoon_v40SDXL",
+                                            "sdxl/dreamshaperXL_lightningDPMSDE",
+                                            "sdxl/dreamshaperXL_v21TurboDPMSDE",
+                                            "sdxl/real/realisticStockPhoto_v10",
+                                            "svd/svd",
+                                            "svd/svd_xt",],),
                              }
                 }
 
@@ -322,7 +362,6 @@ class AvailableCheckpointLoader:
         out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True,
                                                     embedding_directory=folder_paths.get_folder_paths("embeddings"))
         return out[:3]
-
 
 class AvailableVAELoader:
 
