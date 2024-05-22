@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-tool-2lab"
+description = "simple tool set for developing workflow and publish to web api server"
+version = "1.0.0"
+license = "LICENSE"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/AI2lab/comfyUI-tool-2lab"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyUI-tool-2lab"
+Icon = ""
